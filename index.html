@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026年你最缺什麼？職涯大解密</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* 自定義勾選樣式 */
+        .custom-checkbox:checked + label {
+            background-color: #eab308;
+            color: #020617;
+            border-color: #eab308;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
+
+        /* 圖片慶祝動畫 */
+        .celebrate-icon { animation: party-pop 2s infinite ease-in-out; }
+        @keyframes party-pop {
+            0%, 100% { transform: scale(1) rotate(-3deg); }
+            50% { transform: scale(1.05) rotate(3deg); }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-6">
+
+    <!-- Netlify 隱藏表單 (優化偵測機制) -->
+    <form action='/' hidden method='POST' name='career-quiz-2026'>
+        <input type="hidden" name="form-name" value="career-quiz-2026" />
+        <input type="text" name="path" />
+        <input type="textarea" name="answers" />
+        <input type="text" name="needs" />
+        <input type="text" name="user_name" />
+        <input type="text" name="user_gender" />
+        <input type="text" name="contact_method" />
+        <input type="text" name="contact_detail" />
+        <input type="text" name="work_city" />
+        <input type="text" name="area_limit" />
+        <input type="text" name="available_time" />
+    </form>
+
+    <div id="app" class="max-w-md w-full bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl fade-in">
+        
+        <!-- 初始畫面 -->
+        <div id="start-screen" class="text-center">
+            <div class="mb-6 inline-block p-4 bg-yellow-500/10 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <h1 class="text-3xl font-black mb-2 tracking-tight text-white">2026年<br><span class="text-yellow-500">你最缺什麼？</span></h1>
+            <p class="text-slate-400 mb-8 leading-relaxed">未來的職涯充滿變數，<br>透過 1 分鐘測驗找出你的關鍵需求。</p>
+            <button onclick="startApp()" class="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold py-4 rounded-xl transition-all shadow-lg shadow-yellow-500/20">
+                進入測驗
+            </button>
+        </div>
+
+        <!-- 測驗內容區 -->
+        <div id="quiz-container" class="hidden">
+            <div class="flex justify-between items-center mb-6">
+                <span id="progress-tag" class="text-xs font-bold uppercase tracking-widest text-yellow-500 bg-yellow-500/10 px-3 py-1 rounded-full">Question</span>
+                <button onclick="location.reload()" class="text-slate-500 hover:text-white text-xs">重新開始</button>
+            </div>
+            <h2 id="question-text" class="text-xl font-bold mb-6 text-white min-h-[3.5rem]"></h2>
+            <div id="options-space" class="space-y-3"></div>
+        </div>
+
+        <!-- 結果與需求勾選 -->
+        <div id="result-screen" class="hidden">
+            <div class="text-center mb-6">
+                <div class="mb-4 inline-block p-3 bg-green-500/10 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h2 class="text-slate-400 font-bold mb-1 uppercase tracking-widest text-xs">診斷報告</h2>
+                <div id="result-content" class="text-3xl font-black text-white mb-3"></div>
+                <p id="result-desc" class="text-slate-400 text-sm leading-relaxed mb-6"></p>
+            </div>
+            
+            <div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700 mb-6">
+                <h3 class="text-yellow-500 font-bold mb-4 text-center text-base">您目前認為您需要是什麼？(可複選)</h3>
+                <div id="needs-options" class="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar"></div>
+            </div>
+
+            <button onclick="showContactForm()" class="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold py-4 rounded-xl transition shadow-lg shadow-yellow-500/20 text-sm leading-tight">
+                您希望即時得到好的建議及協助嗎？
+            </button>
+        </div>
+
+        <!-- 聯絡資訊表單 Step 1 -->
+        <div id="contact-screen" class="hidden">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold text-white">基本資料 (1/2)</h2>
+                <span class="text-slate-500 text-xs italic">即將完成</span>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs text-slate-500 mb-1 ml-1">姓名</label>
+                    <input type="text" id="form-name" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-white" placeholder="怎麼稱呼您？">
+                </div>
+                
+                <div>
+                    <label class="block text-xs text-slate-500 mb-1 ml-1">性別</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setGender('男')" class="gender-btn bg-slate-800 border border-slate-700 py-2 rounded-xl text-sm" data-val="男">先生</button>
+                        <button onclick="setGender('女')" class="gender-btn bg-slate-800 border border-slate-700 py-2 rounded-xl text-sm" data-val="女">女士</button>
+                        <button onclick="setGender('其他')" class="gender-btn bg-slate-800 border border-slate-700 py-2 rounded-xl text-sm" data-val="其他">其他</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-slate-500 mb-1 ml-1">偏好聯絡方式</label>
+                    <select id="form-method" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-sm appearance-none text-white">
+                        <option value="LINE">LINE</option>
+                        <option value="電話">電話</option>
+                        <option value="電子信箱">電子信箱</option>
+                        <option value="FB">Facebook</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-slate-500 mb-1 ml-1">聯絡帳號 / 號碼</label>
+                    <input type="text" id="form-detail" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-white" placeholder="請填寫...">
+                </div>
+            </div>
+
+            <button onclick="showExtraInfoForm()" class="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold py-4 rounded-xl transition mt-8 shadow-lg shadow-yellow-500/20 text-sm">
+                我希望即時得到建議及協助
+            </button>
+            <button onclick="backToNeeds()" class="w-full text-slate-500 text-xs mt-4 hover:underline">返回修改需求</button>
+        </div>
+
+        <!-- 聯絡資訊表單 Step 2 -->
+        <div id="extra-info-screen" class="hidden">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold text-white">服務偏好 (2/2)</h2>
+                <span class="text-slate-500 text-xs italic">最後一步！</span>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs text-slate-500 mb-1 ml-1">您工作的地點在哪個城市？</label>
+                    <input type="text" id="form-city" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-white" placeholder="例如：台北市、台中市...">
+                </div>
+
+                <div>
+                    <label class="block text-xs text-slate-500 mb-1 ml-1">您服務的對象有區域性的限制嗎？</label>
+                    <select id="form-area-limit" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-sm appearance-none text-white">
+                        <option value="無限制">無限制 (全台/全球)</option>
+                        <option value="有，僅限本地">有，僅限本地</option>
+                        <option value="目前還不確定">目前還不確定</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-slate-500 mb-2 ml-1">您平常方便聯絡的時間？(可多選)</label>
+                    <div class="grid grid-cols-2 gap-2" id="available-time-options"></div>
+                </div>
+            </div>
+
+            <button id="final-submit-btn" onclick="submitFinalData()" class="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold py-4 rounded-xl transition mt-8 shadow-lg shadow-yellow-500/20">
+                按我！2026好運來！
+            </button>
+            <button onclick="backToStep1()" class="w-full text-slate-500 text-xs mt-4 hover:underline">返回基本資料</button>
+        </div>
+
+        <!-- 成功送出畫面 -->
+        <div id="thanks-screen" class="hidden text-center py-10">
+            <div class="mb-6 inline-block celebrate-icon w-full">
+                <!-- 調整為寬度自適應，最大 320px 以符合卡片寬度 -->
+                <img src="./234.jpg" alt="慶祝" class="w-full max-w-[320px] h-auto object-contain mx-auto rounded-2xl" onerror="this.src='https://cdn-icons-png.flaticon.com/512/744/744922.png'">
+            </div>
+            <h2 class="text-2xl font-black text-white mb-4 leading-tight tracking-tight">祝您心想事成，<br>好運很快就會降臨</h2>
+            <p class="text-slate-400 leading-relaxed mb-10 text-xl font-bold text-yellow-500">
+                請靜候佳音！
+            </p>
+            <button onclick="location.reload()" class="w-full bg-slate-800 hover:bg-slate-700 py-4 rounded-xl transition text-sm font-bold border border-slate-700 text-white">
+                回到首頁
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let state = {
+            currentPath: null,
+            currentIndex: -1,
+            answers: [],
+            selectedNeeds: [],
+            gender: "男"
+        };
+
+        const paths = {
+            main: {
+                text: "你目前的職涯狀態是？",
+                options: [
+                    { text: "1. 上班中", value: "work" },
+                    { text: "2. 創業中", value: "startup" },
+                    { text: "3. 接班中", value: "legacy" },
+                    { text: "4. 待業中", value: "unemployed" }
+                ]
+            },
+            work: [
+                { text: "你的工作性質是？", type: "input" },
+                { text: "你的工作年資大約多久？", type: "input" },
+                { text: "目前是否擔任主管職？", type: "select", options: ["是", "否"] },
+                { text: "是否有帶領團隊？人數大約？", type: "input" },
+                { text: "在工作中是否有決策權？", type: "select", options: ["有", "部分有", "完全沒有"] }
+            ],
+            startup: [
+                { text: "你的創業項目是什麼？", type: "input" },
+                { text: "創業至今多久了？", type: "input" },
+                { text: "你目前是主要負責人嗎？", type: "select", options: ["是", "否"] },
+                { text: "是否有帶領團隊？人數大約？", type: "input" },
+                { text: "是否有最終決策權？", type: "select", options: ["是", "否"] }
+            ],
+            legacy: [
+                { text: "你接班的項目是什麼？", type: "input" },
+                { text: "公司目前成立幾年了？", type: "input" },
+                { text: "你本人接班幾年了？", type: "input" },
+                { text: "是否已成為正式負責人？", type: "select", options: ["是", "否"] },
+                { text: "是否有帶領團隊？人數大約？", type: "input" },
+                { text: "是否有最終決策權？", type: "select", options: ["是", "否"] }
+            ],
+            unemployed: [
+                { text: "未來有想過要創業嗎？", type: "select", options: ["有，非常渴望", "有想過但還在考慮", "沒有，只想穩定上班"] },
+                { text: "過去是否有創業相關經驗？", type: "select", options: ["有，當過老闆", "有，核心團隊", "完全沒有"] },
+                { text: "想創業（或想工作）的主要動機？", type: "input" },
+                { text: "如果創業，想做哪個項目？", type: "input" },
+                { text: "過去是否有帶領過團隊？", type: "select", options: ["有", "否"] },
+                { text: "若有，團隊大約幾人？", type: "input" },
+                { text: "預計什麼時候開始行動？", type: "input" }
+            ]
+        };
+
+        const needsOptions = [
+            "有人懂你", "幫您抓定位", "幫我做行銷找客戶", "幫我經營客戶滿意度", 
+            "找到好的合作廠商", "希望有人手可以幫忙", "我想找業務來推廣", 
+            "我只想高效率工作", "我覺得我需要突破", "我還沒有什麼想法"
+        ];
+
+        const timeOptions = ["平日", "假日", "早上", "下午", "晚上"];
+
+        function startApp() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('quiz-container').classList.remove('hidden');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const optionsSpace = document.getElementById('options-space');
+            const questionText = document.getElementById('question-text');
+            optionsSpace.innerHTML = "";
+            
+            if (state.currentIndex === -1) {
+                questionText.innerText = paths.main.text;
+                paths.main.options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full bg-slate-800 hover:bg-slate-700 text-left px-5 py-4 rounded-xl border border-slate-700 transition active:scale-95 shadow-sm";
+                    btn.innerText = opt.text;
+                    btn.onclick = () => {
+                        state.currentPath = opt.value;
+                        state.currentIndex = 0;
+                        state.answers.push({ q: paths.main.text, a: opt.text });
+                        renderQuestion();
+                    };
+                    optionsSpace.appendChild(btn);
+                });
+                return;
+            }
+
+            const currentQuestions = paths[state.currentPath];
+            if (state.currentIndex >= currentQuestions.length) {
+                showResult();
+                return;
+            }
+
+            const q = currentQuestions[state.currentIndex];
+            questionText.innerText = q.text;
+
+            if (q.type === "select") {
+                q.options.forEach(optText => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full bg-slate-800 hover:bg-slate-700 text-left px-5 py-4 rounded-xl border border-slate-700 transition active:scale-95 shadow-sm";
+                    btn.innerText = optText;
+                    btn.onclick = () => {
+                        state.answers.push({ q: q.text, a: optText });
+                        state.currentIndex++;
+                        renderQuestion();
+                    };
+                    optionsSpace.appendChild(btn);
+                });
+            } else if (q.type === "input") {
+                const input = document.createElement('input');
+                input.type = "text";
+                input.className = "w-full bg-slate-800 border border-slate-700 p-4 rounded-xl mb-4 text-white focus:ring-2 focus:ring-yellow-500 outline-none";
+                input.placeholder = "請輸入...";
+                input.id = "user-input";
+                
+                const nextBtn = document.createElement('button');
+                nextBtn.className = "w-full bg-yellow-500 text-slate-950 font-bold py-3 rounded-xl shadow-lg shadow-yellow-500/10";
+                nextBtn.innerText = "下一步";
+                nextBtn.onclick = () => {
+                    const val = document.getElementById('user-input').value;
+                    if (!val) return;
+                    state.answers.push({ q: q.text, a: val });
+                    state.currentIndex++;
+                    renderQuestion();
+                };
+
+                optionsSpace.appendChild(input);
+                optionsSpace.appendChild(nextBtn);
+                setTimeout(() => input.focus(), 100);
+            }
+        }
+
+        function showResult() {
+            document.getElementById('quiz-container').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            
+            const results = [
+                { title: "充足的睡眠", desc: "2026 年你的職涯將進入高速成長期，但目前你的靈魂嚴重缺覺，建議先補眠再衝刺！" },
+                { title: "跳脫框架的勇氣", desc: "你已經在現狀中待太久了。2026 年對你而言，最缺的是突破舒適圈的臨門一腳。" },
+                { title: "強大的團隊支援", desc: "你具備優秀的領導力，但目前的你正單打獨鬥。找尋夥伴是你明年的首要任務。" },
+                { title: "精準的市場定位", desc: "你很有才華，但就像沒有導航的超跑。你需要一個懂你且能幫你抓出定位的導師。" }
+            ];
+            const finalResult = results[Math.floor(Math.random() * results.length)];
+            document.getElementById('result-content').innerText = finalResult.title;
+            document.getElementById('result-desc').innerText = finalResult.desc;
+
+            const needsSpace = document.getElementById('needs-options');
+            needsSpace.innerHTML = "";
+            needsOptions.forEach((opt, index) => {
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <input type="checkbox" id="need-${index}" class="hidden custom-checkbox need-cb" value="${opt}">
+                    <label for="need-${index}" class="block w-full border border-slate-700 bg-slate-800/50 p-4 rounded-lg text-base cursor-pointer transition text-slate-300">
+                        ${index + 1}. ${opt}
+                    </label>
+                `;
+                needsSpace.appendChild(div);
+            });
+        }
+
+        function showContactForm() {
+            const selected = Array.from(document.querySelectorAll('.need-cb:checked')).map(cb => cb.value);
+            if (selected.length === 0) {
+                alert("請至少選擇一個需求喔！");
+                return;
+            }
+            state.selectedNeeds = selected;
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('contact-screen').classList.remove('hidden');
+            setGender('男'); 
+        }
+
+        function showExtraInfoForm() {
+            const name = document.getElementById('form-name').value;
+            const detail = document.getElementById('form-detail').value;
+            if (!name || !detail) {
+                alert("請填寫姓名與聯絡資訊。");
+                return;
+            }
+            document.getElementById('contact-screen').classList.add('hidden');
+            document.getElementById('extra-info-screen').classList.remove('hidden');
+            
+            const timeSpace = document.getElementById('available-time-options');
+            timeSpace.innerHTML = "";
+            timeOptions.forEach((opt, index) => {
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <input type="checkbox" id="time-${index}" class="hidden custom-checkbox time-cb" value="${opt}">
+                    <label for="time-${index}" class="block w-full border border-slate-700 bg-slate-800/50 p-2 rounded-lg text-xs text-center cursor-pointer transition text-slate-300">
+                        ${opt}
+                    </label>
+                `;
+                timeSpace.appendChild(div);
+            });
+        }
+
+        function backToNeeds() {
+            document.getElementById('contact-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+        }
+
+        function backToStep1() {
+            document.getElementById('extra-info-screen').classList.add('hidden');
+            document.getElementById('contact-screen').classList.remove('hidden');
+        }
+
+        function setGender(val) {
+            state.gender = val;
+            document.querySelectorAll('.gender-btn').forEach(btn => {
+                if (btn.dataset.val === val) {
+                    btn.classList.add('bg-yellow-500', 'text-slate-950', 'border-yellow-500');
+                    btn.classList.remove('bg-slate-800', 'text-slate-100');
+                } else {
+                    btn.classList.remove('bg-yellow-500', 'text-slate-950', 'border-yellow-500');
+                    btn.classList.add('bg-slate-800', 'text-slate-100');
+                }
+            });
+        }
+
+        async function submitFinalData() {
+            const city = document.getElementById('form-city').value;
+            const areaLimit = document.getElementById('form-area-limit').value;
+            const selectedTimes = Array.from(document.querySelectorAll('.time-cb:checked')).map(cb => cb.value);
+
+            if (!city) {
+                alert("請填寫工作城市。");
+                return;
+            }
+            if (selectedTimes.length === 0) {
+                alert("請至少選擇一個方便聯絡的時間。");
+                return;
+            }
+
+            const submitBtn = document.getElementById('final-submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerText = "傳送好運中...";
+
+            // 格式化問答紀錄為易讀字串
+            const formattedAnswers = state.answers.map(item => `${item.q}\n-> ${item.a}`).join("\n\n");
+
+            const body = new URLSearchParams();
+            body.append("form-name", "career-quiz-2026");
+            body.append("path", state.currentPath || "");
+            body.append("answers", formattedAnswers); // 改為格式化後的字串
+            body.append("needs", state.selectedNeeds.join(", "));
+            body.append("user_name", document.getElementById('form-name').value);
+            body.append("user_gender", state.gender);
+            body.append("contact_method", document.getElementById('form-method').value);
+            body.append("contact_detail", document.getElementById('form-detail').value);
+            body.append("work_city", city);
+            body.append("area_limit", areaLimit);
+            body.append("available_time", selectedTimes.join(", "));
+
+            const showSuccess = () => {
+                document.getElementById('extra-info-screen').classList.add('hidden');
+                document.getElementById('thanks-screen').classList.remove('hidden');
+            };
+
+            try {
+                await fetch("/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: body.toString(),
+                });
+                showSuccess();
+            } catch (error) {
+                console.warn("Netlify Form Submission failed, entering success screen for testing.");
+                showSuccess();
+            }
+        }
+    </script>
+</body>
+</html>
